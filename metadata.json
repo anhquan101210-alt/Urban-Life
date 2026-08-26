@@ -1,0 +1,6 @@
+{
+  "name": "Urban Life",
+  "description": "A 3D city builder and management simulation game with low, medium, and high density zoning, road networks, traffic, public transport, city services, utilities, economy, and day/night cycles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
