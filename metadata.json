@@ -1,6 +1,6 @@
 {
   "name": "Urban Life",
-  "description": "A 3D city builder and management simulation game with low, medium, and high density zoning, road networks, traffic, public transport, city services, utilities, economy, and day/night cycles.",
+  "description": "A 2D isometric pixel-art city builder and management simulation game (v0.1 alpha) with low, medium, and high density zoning, auto-tiling road networks, vehicles, pedestrians, city services, utilities, economy, day/night cycles, and weather effects.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

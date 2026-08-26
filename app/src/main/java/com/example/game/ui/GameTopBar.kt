@@ -1,14 +1,17 @@
 package com.example.game.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.game.model.CityStats
+import com.example.game.model.WeatherType
 import com.example.game.renderer.Camera3D
 import java.text.NumberFormat
 import java.util.Locale
@@ -29,156 +33,263 @@ fun GameTopBar(
     fps: Int,
     showFps: Boolean,
     onSpeedChanged: (Int) -> Unit,
+    onOpenDemand: () -> Unit,
+    onOpenCityInfo: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.US).apply {
         maximumFractionDigits = 0
     }
+    val numberFormat = NumberFormat.getNumberInstance(Locale.US)
 
-    Surface(
+    PixelPanel(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = Color(0xDD0D1B2A),
-        shadowElevation = 6.dp
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+        borderColor = PixelColors.PanelBorder,
+        backgroundColor = PixelColors.PanelBg
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // 1. City Stats (Pop, Happiness, Treasury, Date)
+            // 1. Primary Metrics (Population, Happiness, Treasury, Date/Weather)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Population
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.People,
-                        contentDescription = "Population",
-                        tint = Color(0xFF64B5F6),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF0F1E30))
+                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                ) {
+                    Text("👥", fontSize = 11.sp)
+                    Spacer(modifier = Modifier.width(3.dp))
                     Text(
-                        text = NumberFormat.getNumberInstance().format(stats.population),
-                        color = Color.White,
+                        text = numberFormat.format(stats.population),
+                        color = Color(0xFFE0E6ED),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
+                        fontSize = 11.5.sp,
                         modifier = Modifier.testTag("population_text")
                     )
                 }
 
                 // Happiness
                 val hapColor = when {
-                    stats.happiness >= 80 -> Color(0xFF81C784)
-                    stats.happiness >= 60 -> Color(0xFFFFD54F)
-                    else -> Color(0xFFE57373)
+                    stats.happiness >= 80 -> PixelColors.AccentGreen
+                    stats.happiness >= 55 -> PixelColors.AccentGold
+                    else -> PixelColors.AccentRed
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        if (stats.happiness >= 70) Icons.Default.SentimentSatisfiedAlt else Icons.Default.SentimentDissatisfied,
-                        contentDescription = "Happiness",
-                        tint = hapColor,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF0F1E30))
+                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                ) {
+                    Text(if (stats.happiness >= 70) "🙂" else "😐", fontSize = 11.sp)
+                    Spacer(modifier = Modifier.width(3.dp))
                     Text(
                         text = "${stats.happiness}%",
                         color = hapColor,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        fontSize = 11.5.sp
                     )
                 }
 
-                // Treasury
-                val moneyColor = if (stats.treasury >= 0) Color(0xFF81C784) else Color(0xFFE57373)
-                val dailyDelta = stats.dailyIncome - stats.dailyExpenses
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.MonetizationOn,
-                        contentDescription = "Funds",
-                        tint = moneyColor,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Column {
-                        Text(
-                            text = currencyFormat.format(stats.treasury),
-                            color = moneyColor,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            modifier = Modifier.testTag("treasury_text")
-                        )
-                        Text(
-                            text = (if (dailyDelta >= 0) "+$" else "-$") + NumberFormat.getNumberInstance().format(kotlin.math.abs(dailyDelta)) + "/d",
-                            color = if (dailyDelta >= 0) Color(0xFFA5D6A7) else Color(0xFFEF9A9A),
-                            fontSize = 9.sp
-                        )
-                    }
-                }
+                // Treasury & Cashflow
+                val netIncome = stats.dailyIncome - stats.dailyExpenses
+                val netIncomeColor = if (netIncome >= 0) PixelColors.AccentGreen else PixelColors.AccentRed
+                val sign = if (netIncome >= 0) "+" else ""
 
-                // Day / Night & Clock
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val hour = stats.dayTime.toInt()
-                    val minute = ((stats.dayTime - hour) * 60).toInt()
-                    val isDay = stats.dayTime in 6.0f..18.5f
-                    Icon(
-                        if (isDay) Icons.Default.WbSunny else Icons.Default.NightsStay,
-                        contentDescription = "Time",
-                        tint = if (isDay) Color(0xFFFFD54F) else Color(0xFF90CAF9),
-                        modifier = Modifier.size(16.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF0F1E30))
+                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                ) {
+                    Text("💰", fontSize = 11.sp)
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = currencyFormat.format(stats.treasury),
+                        color = if (stats.treasury >= 0) Color(0xFF81C784) else PixelColors.AccentRed,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.5.sp
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Day ${stats.dayCount}  %02d:%02d".format(hour, minute),
-                        color = Color(0xFFCFD8DC),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium
+                        text = "($sign$$netIncome/d)",
+                        color = netIncomeColor,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 9.5.sp
+                    )
+                }
+
+                // Weather & Game Time
+                val hours = stats.dayTime.toInt()
+                val minutes = ((stats.dayTime - hours) * 60).toInt()
+                val timeString = String.format(Locale.US, "%02d:%02d", hours, minutes)
+                val weatherIcon = when (stats.weather) {
+                    WeatherType.SUNNY -> "☀"
+                    WeatherType.CLOUDY -> "☁"
+                    WeatherType.RAIN -> "🌧"
+                    WeatherType.STORM -> "⛈"
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF0F1E30))
+                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                ) {
+                    Text(weatherIcon, fontSize = 11.sp)
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = "Day ${stats.dayCount} $timeString",
+                        color = Color(0xFFB0BEC5),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 10.sp
                     )
                 }
             }
 
-            // 2. RCI Demand Indicator
-            RciDemandMeter(
-                rDemand = stats.residentialDemand,
-                cDemand = stats.commercialDemand,
-                iDemand = stats.industrialDemand
-            )
-
-            // 3. Camera shortcuts & Sim Speed
+            // 2. Interactive RCI Demand Widget
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF0F1E30))
+                    .border(BorderStroke(1.dp, Color(0xFF1E3A5F)), RoundedCornerShape(4.dp))
+                    .clickable { onOpenDemand() }
+                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                    .testTag("rci_widget")
             ) {
-                // Camera buttons
-                CameraQuickButtons(camera)
+                Text(
+                    text = "RCI",
+                    color = Color(0xFF90A4AE),
+                    fontWeight = FontWeight.Black,
+                    fontSize = 9.sp,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
+                PixelDemandBar(label = "R", value = stats.residentialDemand / 100f, color = PixelColors.AccentGreen)
+                PixelDemandBar(label = "C", value = stats.commercialDemand / 100f, color = PixelColors.AccentBlue)
+                PixelDemandBar(label = "I", value = stats.industrialDemand / 100f, color = PixelColors.AccentOrange)
+            }
 
-                // Speed controls
-                SpeedButtons(
-                    currentSpeed = stats.simSpeed,
-                    onSpeedChanged = onSpeedChanged
+            // 3. Paused Indicator (Blinking when simSpeed == 0)
+            if (stats.simSpeed == 0) {
+                val infiniteTransition = rememberInfiniteTransition(label = "paused_pulse")
+                val alpha by infiniteTransition.animateFloat(
+                    initialValue = 0.4f,
+                    targetValue = 1.0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(600, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "alpha"
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(Color(0xFFFF1744).copy(alpha = alpha * 0.4f))
+                        .border(BorderStroke(1.dp, Color(0xFFFF5252)), RoundedCornerShape(3.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "⏸ PAUSED",
+                        color = Color(0xFFFF5252),
+                        fontWeight = FontWeight.Black,
+                        fontSize = 9.5.sp
+                    )
+                }
+            }
+
+            // 4. Speed Controls & Extra Shortcuts
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Pause Button
+                SpeedButton(
+                    label = "⏸",
+                    isSelected = stats.simSpeed == 0,
+                    testTag = "speed_btn_pause",
+                    onClick = { onSpeedChanged(0) }
                 )
 
-                // FPS
+                // 1X Speed
+                SpeedButton(
+                    label = "1X",
+                    isSelected = stats.simSpeed == 1,
+                    testTag = "speed_btn_1x",
+                    onClick = { onSpeedChanged(1) }
+                )
+
+                // 2X Speed
+                SpeedButton(
+                    label = "2X",
+                    isSelected = stats.simSpeed == 2,
+                    testTag = "speed_btn_2x",
+                    onClick = { onSpeedChanged(2) }
+                )
+
+                // 4X Speed
+                SpeedButton(
+                    label = "4X",
+                    isSelected = stats.simSpeed == 4,
+                    testTag = "speed_btn_4x",
+                    onClick = { onSpeedChanged(4) }
+                )
+
+                // City Overview Button
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF132A44))
+                        .border(1.dp, Color(0xFF204A75), RoundedCornerShape(4.dp))
+                        .clickable { onOpenCityInfo() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🏙", fontSize = 11.sp)
+                }
+
+                // Settings Button
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF132A44))
+                        .border(1.dp, Color(0xFF204A75), RoundedCornerShape(4.dp))
+                        .clickable { onOpenSettings() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = Color(0xFFB0BEC5),
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+
+                // Optional FPS Badge
                 if (showFps) {
-                    Surface(
-                        color = Color(0x88000000),
-                        shape = RoundedCornerShape(6.dp),
-                        modifier = Modifier.padding(start = 4.dp)
-                    ) {
-                        Text(
-                            text = "$fps FPS",
-                            color = if (fps >= 45) Color(0xFF81C784) else Color(0xFFFFD54F),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
+                    Text(
+                        text = "${fps}fps",
+                        color = Color(0xFF78909C),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 2.dp)
+                    )
                 }
             }
         }
@@ -186,163 +297,33 @@ fun GameTopBar(
 }
 
 @Composable
-fun RciDemandMeter(
-    rDemand: Float,
-    cDemand: Float,
-    iDemand: Float
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-        modifier = Modifier
-            .background(Color(0x66000000), RoundedCornerShape(8.dp))
-            .padding(horizontal = 6.dp, vertical = 4.dp)
-    ) {
-        Text("RCI", color = Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-        // R (Green)
-        Box(
-            modifier = Modifier
-                .width(6.dp)
-                .height(18.dp)
-                .background(Color(0x444CAF50), RoundedCornerShape(2.dp)),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(rDemand.coerceIn(0.1f, 1f))
-                    .background(Color(0xFF4CAF50), RoundedCornerShape(2.dp))
-            )
-        }
-        // C (Blue)
-        Box(
-            modifier = Modifier
-                .width(6.dp)
-                .height(18.dp)
-                .background(Color(0x442196F3), RoundedCornerShape(2.dp)),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(cDemand.coerceIn(0.1f, 1f))
-                    .background(Color(0xFF2196F3), RoundedCornerShape(2.dp))
-            )
-        }
-        // I (Yellow)
-        Box(
-            modifier = Modifier
-                .width(6.dp)
-                .height(18.dp)
-                .background(Color(0x44FFC107), RoundedCornerShape(2.dp)),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(iDemand.coerceIn(0.1f, 1f))
-                    .background(Color(0xFFFFC107), RoundedCornerShape(2.dp))
-            )
-        }
-    }
-}
-
-@Composable
-fun CameraQuickButtons(camera: Camera3D) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        // Home
-        SmallIconButton(
-            icon = Icons.Default.Home,
-            tooltip = "Center City",
-            testTag = "camera_home_button",
-            onClick = { camera.centerOn(18f, 18f) }
-        )
-        // Iso
-        SmallIconButton(
-            icon = Icons.Default.ViewInAr,
-            tooltip = "Isometric",
-            testTag = "camera_iso_button",
-            onClick = { camera.setIsometricView() }
-        )
-        // Close
-        SmallIconButton(
-            icon = Icons.Default.ZoomIn,
-            tooltip = "Close View",
-            testTag = "camera_close_button",
-            onClick = { camera.setCloseView() }
-        )
-        // Top
-        SmallIconButton(
-            icon = Icons.Default.Navigation,
-            tooltip = "Top Down",
-            testTag = "camera_top_button",
-            onClick = { camera.setTopView() }
-        )
-    }
-}
-
-@Composable
-fun SpeedButtons(
-    currentSpeed: Int,
-    onSpeedChanged: (Int) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .background(Color(0x66000000), RoundedCornerShape(8.dp))
-            .padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        SpeedItem(label = "⏸", isSelected = currentSpeed == 0, onClick = { onSpeedChanged(0) })
-        SpeedItem(label = "1x", isSelected = currentSpeed == 1, onClick = { onSpeedChanged(1) })
-        SpeedItem(label = "2x", isSelected = currentSpeed == 2, onClick = { onSpeedChanged(2) })
-        SpeedItem(label = "4x", isSelected = currentSpeed == 4, onClick = { onSpeedChanged(4) })
-    }
-}
-
-@Composable
-fun SpeedItem(
+private fun SpeedButton(
     label: String,
     isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(if (isSelected) Color(0xFF29B6F6) else Color.Transparent)
-            .clickable { onClick() }
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            color = if (isSelected) Color.Black else Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 10.sp
-        )
-    }
-}
-
-@Composable
-fun SmallIconButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    tooltip: String,
     testTag: String,
     onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
-            .size(28.dp)
-            .clip(CircleShape)
-            .background(Color(0x44FFFFFF))
+            .size(26.dp, 22.dp)
+            .clip(RoundedCornerShape(3.dp))
+            .background(if (isSelected) PixelColors.AccentCyan.copy(alpha = 0.35f) else Color(0xFF0F1E30))
+            .border(
+                BorderStroke(
+                    if (isSelected) 1.5.dp else 1.dp,
+                    if (isSelected) PixelColors.AccentCyan else Color(0xFF1E3A5F)
+                ),
+                RoundedCornerShape(3.dp)
+            )
             .clickable { onClick() }
             .testTag(testTag),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = tooltip,
-            tint = Color.White,
-            modifier = Modifier.size(16.dp)
+        Text(
+            text = label,
+            color = if (isSelected) PixelColors.AccentCyan else Color(0xFFCFD8DC),
+            fontWeight = FontWeight.Black,
+            fontSize = 9.sp
         )
     }
 }

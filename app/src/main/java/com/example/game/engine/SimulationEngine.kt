@@ -55,6 +55,18 @@ class SimulationEngine(
         collectTaxesAndPayMaintenance()
         recordHistory()
         checkRandomDisasterEvent()
+        updateWeatherPattern()
+    }
+
+    private fun updateWeatherPattern() {
+        // Random weather transitions
+        val roll = random.nextFloat()
+        stats.weather = when {
+            roll < 0.50f -> WeatherType.SUNNY
+            roll < 0.75f -> WeatherType.CLOUDY
+            roll < 0.92f -> WeatherType.RAIN
+            else -> WeatherType.STORM
+        }
     }
 
     private fun updateUtilitiesGrid() {

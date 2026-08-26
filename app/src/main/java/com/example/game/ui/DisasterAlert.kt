@@ -1,8 +1,6 @@
 package com.example.game.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Warning
@@ -24,18 +22,17 @@ fun DisasterAlert(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    PixelPanel(
         modifier = modifier
-            .fillMaxWidth(0.88f)
-            .padding(8.dp)
+            .widthIn(max = 480.dp)
+            .fillMaxWidth(0.9f)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
             .testTag("disaster_alert_banner"),
-        shape = RoundedCornerShape(16.dp),
-        color = Color(0xF0B71C1C),
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFFF5252)),
-        shadowElevation = 12.dp
+        borderColor = Color(0xFFFF1744),
+        backgroundColor = Color(0xF24A0E17)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -46,37 +43,39 @@ fun DisasterAlert(
                 Icon(
                     Icons.Default.Warning,
                     contentDescription = "Alert",
-                    tint = Color(0xFFFFD54F),
-                    modifier = Modifier.size(24.dp)
+                    tint = PixelColors.AccentGold,
+                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Column {
                     Text(
-                        text = disaster.title,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        text = "🔥 ${disaster.title.uppercase()}",
+                        color = Color(0xFFFF8A80),
+                        fontWeight = FontWeight.Black,
+                        fontSize = 11.sp
                     )
                     Text(
                         text = disaster.description,
                         color = Color(0xFFFFCDD2),
-                        fontSize = 10.sp,
+                        fontSize = 9.5.sp,
                         maxLines = 1
                     )
                 }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Button(
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                PixelButton(
                     onClick = { onLocate(disaster) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                    modifier = Modifier.height(28.dp)
+                    backgroundColor = Color(0xFFC62828),
+                    borderColor = Color(0xFFFF5252),
+                    modifier = Modifier.height(26.dp)
                 ) {
-                    Text("Locate", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Text("LOCATE", color = Color.White, fontSize = 9.5.sp, fontWeight = FontWeight.Bold)
                 }
-                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(22.dp)) {
                     Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color.White, modifier = Modifier.size(16.dp))
                 }
             }

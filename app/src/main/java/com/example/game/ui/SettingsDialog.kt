@@ -3,7 +3,9 @@ package com.example.game.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -36,69 +38,75 @@ fun SettingsDialog(
     var hapticsOn by remember { mutableStateOf(soundManager.hapticsEnabled) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
+        PixelPanel(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
+                .widthIn(max = 460.dp)
+                .fillMaxWidth(0.92f)
                 .wrapContentHeight()
-                .padding(10.dp)
                 .testTag("settings_dialog"),
-            shape = RoundedCornerShape(24.dp),
-            color = Color(0xFF101C2E),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x33FFFFFF)),
-            shadowElevation = 16.dp
+            borderColor = PixelColors.PanelBorder,
+            backgroundColor = PixelColors.PanelBgSolid
         ) {
-            Column(modifier = Modifier.padding(18.dp)) {
+            Column(
+                modifier = Modifier
+                    .padding(14.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "GAME SETTINGS",
-                        color = Color(0xFFB0BEC5),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        letterSpacing = 1.sp
-                    )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                    Column {
+                        Text(
+                            text = "⚙ GAME SETTINGS",
+                            color = PixelColors.AccentCyan,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 13.sp,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text = "Urban Life v0.1 alpha",
+                            color = Color(0xFF90A4AE),
+                            fontSize = 9.sp
+                        )
+                    }
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
                         Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.LightGray)
                     }
                 }
 
-                Divider(color = Color(0x22FFFFFF), modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = Color(0x33FFFFFF), modifier = Modifier.padding(vertical = 6.dp))
 
                 // Graphics Quality Selector
-                Text("GRAPHICS PRESET", color = Color(0xFF90CAF9), fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                Spacer(modifier = Modifier.height(6.dp))
+                Text("GRAPHICS PRESET", color = PixelColors.AccentCyan, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     GraphicsQuality.values().forEach { gq ->
                         val isSelected = graphicsQuality == gq
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) Color(0xFF29B6F6) else Color(0x22FFFFFF))
-                                .clickable { onGraphicsChanged(gq) }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
+                        PixelButton(
+                            onClick = { onGraphicsChanged(gq) },
+                            isSelected = isSelected,
+                            selectedColor = PixelColors.AccentCyan,
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text(
                                 text = gq.name,
-                                color = if (isSelected) Color.Black else Color.White,
+                                color = if (isSelected) Color.White else Color(0xFFCFD8DC),
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
+                                fontSize = 9.5.sp
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Toggle Options
+                // Toggles
                 SettingToggleRow(label = "Show FPS Counter", isChecked = showFps, onCheckedChange = { onToggleFps() })
                 SettingToggleRow(label = "Sound Effects", isChecked = soundOn, onCheckedChange = {
                     soundOn = it
@@ -109,40 +117,40 @@ fun SettingsDialog(
                     soundManager.hapticsEnabled = it
                 })
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Save / Load / New City Actions
-                Text("SAVE & RESTART", color = Color(0xFF90CAF9), fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                Spacer(modifier = Modifier.height(8.dp))
+                // City Save & Load
+                Text("CITY MANAGEMENT", color = PixelColors.AccentCyan, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Button(
+                    PixelButton(
                         onClick = { onSaveCity(); onDismiss() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.weight(1f).testTag("save_city_button")
+                        backgroundColor = Color(0xFF1B5E20),
+                        borderColor = PixelColors.AccentGreen,
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("Save City", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("💾 Save City", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    Button(
+                    PixelButton(
                         onClick = { onLoadCity(); onDismiss() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.weight(1f).testTag("load_city_button")
+                        backgroundColor = Color(0xFF0D47A1),
+                        borderColor = PixelColors.AccentBlue,
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("Load City", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("📂 Load City", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    Button(
+                    PixelButton(
                         onClick = { onResetCity(); onDismiss() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.weight(1f).testTag("new_city_button")
+                        backgroundColor = Color(0xFF7F0000),
+                        borderColor = PixelColors.AccentRed,
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("New City", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("🗑 Reset Map", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -163,13 +171,13 @@ private fun SettingToggleRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, color = Color.White, fontSize = 12.sp)
+        Text(text = label, color = Color(0xFFECEFF1), fontSize = 11.sp)
         Switch(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color(0xFF29B6F6),
-                checkedTrackColor = Color(0xFF0288D1),
+                checkedThumbColor = PixelColors.AccentCyan,
+                checkedTrackColor = Color(0xFF006064),
                 uncheckedThumbColor = Color.LightGray,
                 uncheckedTrackColor = Color(0x33FFFFFF)
             )

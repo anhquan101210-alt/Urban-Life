@@ -23,9 +23,12 @@ data class GameUiState(
     val activeTool: ActiveTool = ActiveTool(mode = ToolMode.INSPECT),
     val selectedTile: GridTile? = null,
     val overlayMode: OverlayMode = OverlayMode.NORMAL,
+    val isDemandDialogOpen: Boolean = false,
+    val isCityOverviewDialogOpen: Boolean = false,
     val isEconomyDialogOpen: Boolean = false,
     val isStatsDialogOpen: Boolean = false,
     val isSettingsDialogOpen: Boolean = false,
+    val isExitConfirmDialogOpen: Boolean = false,
     val graphicsQuality: GraphicsQuality = GraphicsQuality.HIGH,
     val showFpsCounter: Boolean = true,
     val fps: Int = 60,
@@ -258,6 +261,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         sim.stats.industrialTaxRate = ind
     }
 
+    fun toggleDemandDialog(open: Boolean) {
+        soundManager.playClick()
+        _uiState.value = _uiState.value.copy(isDemandDialogOpen = open)
+    }
+
+    fun toggleCityOverviewDialog(open: Boolean) {
+        soundManager.playClick()
+        _uiState.value = _uiState.value.copy(isCityOverviewDialogOpen = open)
+    }
+
     fun toggleEconomyDialog(open: Boolean) {
         soundManager.playClick()
         _uiState.value = _uiState.value.copy(isEconomyDialogOpen = open)
@@ -271,6 +284,57 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleSettingsDialog(open: Boolean) {
         soundManager.playClick()
         _uiState.value = _uiState.value.copy(isSettingsDialogOpen = open)
+    }
+
+    fun toggleExitConfirmDialog(open: Boolean) {
+        soundManager.playClick()
+        _uiState.value = _uiState.value.copy(isExitConfirmDialogOpen = open)
+    }
+
+    fun resetTool() {
+        soundManager.playClick()
+        _uiState.value = _uiState.value.copy(activeTool = ActiveTool(mode = ToolMode.INSPECT))
+    }
+
+    fun upgradeTile(tile: GridTile) {
+        val b = tile.building
+        if (b != null && b.level < 3) {
+            val upgradeCost = b.level * 150L
+            if (sim.stats.treasury < upgradeCost) {
+                showToast("Not enough money for upgrade ($$upgradeCost required)")
+                return
+            }
+            sim.stats.treasury -= upgradeCost
+            b.level += 1
+            b.population = (b.population * 1.5f).toInt()
+            b.jobs = (b.jobs * 1.5f).toInt()
+            b.landValue += 15
+            soundManager.playCashChime()
+            showToast("Upgraded ${b.buildingName} to Level ${b.level}!")
+            // Trigger refresh of selection
+            _uiState.value = _uiState.value.copy(selectedTile = tile)
+        } else {
+            showToast("Building is already at max level!")
+        }
+    }
+
+    fun handleBackPress(): Boolean {
+        val s = _uiState.value
+        return when {
+            s.isDemandDialogOpen -> { toggleDemandDialog(false); true }
+            s.isCityOverviewDialogOpen -> { toggleCityOverviewDialog(false); true }
+            s.isEconomyDialogOpen -> { toggleEconomyDialog(false); true }
+            s.isStatsDialogOpen -> { toggleStatsDialog(false); true }
+            s.isSettingsDialogOpen -> { toggleSettingsDialog(false); true }
+            s.isExitConfirmDialogOpen -> { toggleExitConfirmDialog(false); true }
+            s.selectedTile != null -> { dismissInspector(); true }
+            s.activeTool.mode != ToolMode.INSPECT -> { resetTool(); true }
+            s.overlayMode != OverlayMode.NORMAL -> { setOverlay(OverlayMode.NORMAL); true }
+            else -> {
+                toggleExitConfirmDialog(true)
+                true
+            }
+        }
     }
 
     fun setGraphicsQuality(quality: GraphicsQuality) {

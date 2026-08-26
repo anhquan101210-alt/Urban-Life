@@ -28,19 +28,20 @@ fun StatisticsDialog(
     history: List<HistoryPoint>,
     onDismiss: () -> Unit
 ) {
+    val numberFormat = NumberFormat.getNumberInstance(Locale.US)
+    val empRate = if (stats.population > 0) ((stats.jobsEmployed.toFloat() / (stats.population * 0.6f)) * 100).toInt().coerceIn(0, 100) else 100
+
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
+        PixelPanel(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.85f)
-                .padding(10.dp)
+                .widthIn(max = 480.dp)
+                .fillMaxWidth(0.94f)
+                .fillMaxHeight(0.88f)
                 .testTag("statistics_dialog"),
-            shape = RoundedCornerShape(24.dp),
-            color = Color(0xFF101C2E),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x33FFFFFF)),
-            shadowElevation = 16.dp
+            borderColor = PixelColors.AccentBlue,
+            backgroundColor = PixelColors.PanelBgSolid
         ) {
-            Column(modifier = Modifier.padding(18.dp)) {
+            Column(modifier = Modifier.padding(14.dp)) {
                 // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -48,121 +49,127 @@ fun StatisticsDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "CITY METRICS & ANALYTICS",
-                        color = Color(0xFF64B5F6),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
+                        text = "📊 CITY STATISTICS & HISTORY",
+                        color = PixelColors.AccentBlue,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 13.sp,
                         letterSpacing = 1.sp
                     )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
                         Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.LightGray)
                     }
                 }
 
-                Divider(color = Color(0x22FFFFFF), modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = Color(0x33FFFFFF), modifier = Modifier.padding(vertical = 6.dp))
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // 1. Demographics Grid
-                    Text("DEMOGRAPHICS & LABOR", color = Color(0xFF90CAF9), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // 1. Demographics
+                    Text("DEMOGRAPHICS & JOBS", color = PixelColors.AccentCyan, fontWeight = FontWeight.Bold, fontSize = 10.5.sp)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         MetricCard(
                             label = "Population",
-                            value = NumberFormat.getNumberInstance().format(stats.population),
-                            color = Color(0xFF81C784),
+                            value = numberFormat.format(stats.population),
+                            color = PixelColors.AccentGreen,
                             modifier = Modifier.weight(1f)
                         )
-                        MetricCard(
-                            label = "Jobs Available",
-                            value = NumberFormat.getNumberInstance().format(stats.jobsTotal),
-                            color = Color(0xFF64B5F6),
-                            modifier = Modifier.weight(1f)
-                        )
-                        val empRate = if (stats.population > 0) ((stats.jobsEmployed.toFloat() / (stats.population * 0.6f)) * 100).toInt().coerceIn(0, 100) else 100
                         MetricCard(
                             label = "Employment Rate",
                             value = "$empRate%",
-                            color = if (empRate >= 80) Color(0xFF81C784) else Color(0xFFFFB74D),
+                            color = PixelColors.AccentBlue,
+                            modifier = Modifier.weight(1f)
+                        )
+                        MetricCard(
+                            label = "Happiness",
+                            value = "${stats.happiness}%",
+                            color = PixelColors.AccentGold,
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    // 2. Power & Water Infrastructure
-                    Text("UTILITIES & CAPACITY", color = Color(0xFF90CAF9), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    // 2. Power & Water
+                    Text("UTILITIES INFRASTRUCTURE", color = PixelColors.AccentCyan, fontWeight = FontWeight.Bold, fontSize = 10.5.sp)
 
                     UtilityBar(
-                        label = "Electrical Grid",
+                        label = "⚡ Electrical Grid",
                         produced = stats.powerCapacityMW,
                         consumed = stats.powerDemandMW,
                         unit = "MW",
-                        barColor = Color(0xFFFFB300)
+                        barColor = PixelColors.AccentGold
                     )
 
                     UtilityBar(
-                        label = "Water Network",
+                        label = "💧 Water Supply",
                         produced = stats.waterCapacityMG,
                         consumed = stats.waterDemandMG,
                         unit = "MG",
-                        barColor = Color(0xFF00B0FF)
+                        barColor = PixelColors.AccentCyan
                     )
 
-                    // 3. Quality of Life
-                    Text("QUALITY OF LIFE", color = Color(0xFF90CAF9), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // 3. City Ratings
+                    Text("CITY INDEX RATINGS", color = PixelColors.AccentCyan, fontWeight = FontWeight.Bold, fontSize = 10.5.sp)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         MetricCard(
-                            label = "Happiness",
-                            value = "${stats.happiness}%",
-                            color = if (stats.happiness >= 75) Color(0xFF81C784) else Color(0xFFE57373),
+                            label = "Traffic Flow",
+                            value = "${100 - stats.trafficIndex}%",
+                            color = if (stats.trafficIndex <= 35) PixelColors.AccentGreen else PixelColors.AccentRed,
                             modifier = Modifier.weight(1f)
                         )
                         MetricCard(
-                            label = "Traffic Congestion",
-                            value = "${stats.trafficIndex}%",
-                            color = if (stats.trafficIndex <= 40) Color(0xFF81C784) else Color(0xFFEF5350),
+                            label = "Air Pollution",
+                            value = "${stats.airPollutionIndex}%",
+                            color = if (stats.airPollutionIndex <= 30) PixelColors.AccentGreen else PixelColors.AccentRed,
                             modifier = Modifier.weight(1f)
                         )
                         MetricCard(
                             label = "Avg Land Value",
-                            value = "${stats.averageLandValue}",
-                            color = Color(0xFFFFD54F),
+                            value = "$${stats.averageLandValue}",
+                            color = PixelColors.AccentGold,
                             modifier = Modifier.weight(1f)
                         )
                     }
 
-                    // 4. Historical Population Trend
+                    // 4. History Chart
                     if (history.size > 2) {
-                        Text("POPULATION GROWTH OVER TIME", color = Color(0xFF90CAF9), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0x22FFFFFF),
+                        Text("POPULATION TREND (RECENT TICKS)", color = PixelColors.AccentCyan, fontWeight = FontWeight.Bold, fontSize = 10.5.sp)
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(80.dp)
-                                .padding(vertical = 4.dp)
+                                .height(70.dp)
+                                .background(Color(0xFF0F1E30), RoundedCornerShape(4.dp))
+                                .padding(6.dp)
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(8.dp),
+                                modifier = Modifier.fillMaxSize(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.Bottom
                             ) {
                                 val maxPop = history.maxOfOrNull { it.population }?.coerceAtLeast(10) ?: 10
-                                history.takeLast(20).forEach { pt ->
-                                    val heightFraction = (pt.population.toFloat() / maxPop).coerceIn(0.05f, 1f)
+                                history.takeLast(24).forEach { pt ->
+                                    val heightFraction = (pt.population.toFloat() / maxPop).coerceIn(0.06f, 1f)
                                     Box(
                                         modifier = Modifier
-                                            .width(8.dp)
+                                            .width(6.dp)
                                             .fillMaxHeight(heightFraction)
-                                            .background(Color(0xFF64B5F6), RoundedCornerShape(2.dp))
+                                            .background(PixelColors.AccentGreen, RoundedCornerShape(1.dp))
                                     )
                                 }
                             }
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    PixelButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = Color(0xFF1E3A5F)
+                    ) {
+                        Text("CLOSE", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                     }
                 }
             }
@@ -172,16 +179,14 @@ fun StatisticsDialog(
 
 @Composable
 private fun MetricCard(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = Color(0x22FFFFFF)
+    Column(
+        modifier = modifier
+            .background(Color(0xFF0F1E30), RoundedCornerShape(4.dp))
+            .padding(6.dp)
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
-            Text(text = label, color = Color.LightGray, fontSize = 9.sp)
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(text = value, color = color, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-        }
+        Text(text = label, color = Color(0xFF90A4AE), fontSize = 8.5.sp)
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(text = value, color = color, fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
     }
 }
 
@@ -194,33 +199,38 @@ private fun UtilityBar(
     barColor: Color
 ) {
     val usageRatio = if (produced > 0) (consumed.toFloat() / produced).coerceIn(0f, 1.5f) else if (consumed > 0) 1.5f else 0f
-    val isOverloaded = produced < consumed
+    val isDeficit = produced < consumed
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF0F1E30), RoundedCornerShape(4.dp))
+            .padding(6.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = label, color = Color.White, fontSize = 11.sp)
+            Text(text = label, color = Color(0xFFECEFF1), fontSize = 9.5.sp)
             Text(
                 text = "$consumed / $produced $unit",
-                color = if (isOverloaded) Color(0xFFFF1744) else barColor,
+                color = if (isDeficit) PixelColors.AccentRed else barColor,
                 fontWeight = FontWeight.Bold,
-                fontSize = 11.sp
+                fontSize = 9.5.sp
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(3.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(10.dp)
-                .background(Color(0x33FFFFFF), RoundedCornerShape(5.dp))
+                .height(6.dp)
+                .background(Color(0xFF1A293E), RoundedCornerShape(2.dp))
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(usageRatio.coerceAtMost(1f))
                     .fillMaxHeight()
-                    .background(if (isOverloaded) Color(0xFFFF1744) else barColor, RoundedCornerShape(5.dp))
+                    .background(if (isDeficit) PixelColors.AccentRed else barColor, RoundedCornerShape(2.dp))
             )
         }
     }

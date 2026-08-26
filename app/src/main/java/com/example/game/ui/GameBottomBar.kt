@@ -1,18 +1,14 @@
 package com.example.game.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -27,167 +23,105 @@ fun GameBottomBar(
     activeCategory: String?,
     activeTool: ActiveTool,
     onCategoryClick: (String) -> Unit,
-    onEconomyClick: () -> Unit,
-    onStatsClick: () -> Unit,
-    onSettingsClick: () -> Unit,
-    onDemolishClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    PixelPanel(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 6.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = Color(0xF00D1B2A),
-        shadowElevation = 10.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x33FFFFFF))
+            .padding(horizontal = 6.dp, vertical = 3.dp),
+        borderColor = PixelColors.PanelBorder,
+        backgroundColor = PixelColors.PanelBg
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(horizontal = 4.dp, vertical = 3.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            MainDockButton(
-                title = "Zones",
-                icon = Icons.Default.GridOn,
-                isSelected = activeCategory == "Zones",
+            DockButton(
+                title = "ZONES",
+                iconEmoji = "🏠",
+                isSelected = activeCategory == "Zones" || (activeCategory == null && activeTool.mode == ToolMode.ZONE),
                 testTag = "bottom_btn_zones",
-                accentColor = Color(0xFF4CAF50),
+                accentColor = PixelColors.AccentGreen,
                 onClick = { onCategoryClick("Zones") }
             )
-            MainDockButton(
-                title = "Roads",
-                icon = Icons.Default.AltRoute,
-                isSelected = activeCategory == "Roads",
+
+            DockButton(
+                title = "ROADS",
+                iconEmoji = "🛣",
+                isSelected = activeCategory == "Roads" || (activeCategory == null && (activeTool.mode == ToolMode.ROAD || activeTool.mode == ToolMode.DEMOLISH)),
                 testTag = "bottom_btn_roads",
-                accentColor = Color(0xFF78909C),
+                accentColor = Color(0xFF90A4AE),
                 onClick = { onCategoryClick("Roads") }
             )
-            MainDockButton(
-                title = "Services",
-                icon = Icons.Default.LocalPolice,
-                isSelected = activeCategory == "Services",
+
+            DockButton(
+                title = "SERVICES",
+                iconEmoji = "🛡",
+                isSelected = activeCategory == "Services" || (activeCategory == null && activeTool.mode == ToolMode.SERVICE),
                 testTag = "bottom_btn_services",
-                accentColor = Color(0xFFE53935),
+                accentColor = PixelColors.AccentRed,
                 onClick = { onCategoryClick("Services") }
             )
-            MainDockButton(
-                title = "Utilities",
-                icon = Icons.Default.Bolt,
-                isSelected = activeCategory == "Utilities",
+
+            DockButton(
+                title = "UTILITIES",
+                iconEmoji = "⚡",
+                isSelected = activeCategory == "Utilities" || (activeCategory == null && activeTool.mode == ToolMode.UTILITY),
                 testTag = "bottom_btn_utilities",
-                accentColor = Color(0xFFFFB300),
+                accentColor = PixelColors.AccentGold,
                 onClick = { onCategoryClick("Utilities") }
             )
-            MainDockButton(
-                title = "Transit",
-                icon = Icons.Default.DirectionsBus,
-                isSelected = activeCategory == "Transport",
+
+            DockButton(
+                title = "TRANSPORT",
+                iconEmoji = "🚌",
+                isSelected = activeCategory == "Transport" || (activeCategory == null && activeTool.mode == ToolMode.TRANSPORT),
                 testTag = "bottom_btn_transport",
                 accentColor = Color(0xFFAB47BC),
                 onClick = { onCategoryClick("Transport") }
             )
-            MainDockButton(
-                title = "Overlays",
-                icon = Icons.Default.Layers,
-                isSelected = activeCategory == "Overlays",
-                testTag = "bottom_btn_overlays",
-                accentColor = Color(0xFF00ACC1),
-                onClick = { onCategoryClick("Overlays") }
-            )
 
-            VerticalDivider(
-                modifier = Modifier
-                    .height(30.dp)
-                    .padding(horizontal = 2.dp),
-                color = Color(0x33FFFFFF)
-            )
-
-            // Bulldoze Tool
-            MainDockButton(
-                title = "Bulldoze",
-                icon = Icons.Default.DeleteForever,
-                isSelected = activeTool.mode == ToolMode.DEMOLISH,
-                testTag = "bottom_btn_demolish",
-                accentColor = Color(0xFFFF1744),
-                onClick = onDemolishClick
-            )
-
-            // Economy Dialog
-            MainDockButton(
-                title = "Economy",
-                icon = Icons.Default.AccountBalance,
-                isSelected = false,
-                testTag = "bottom_btn_economy",
-                accentColor = Color(0xFF81C784),
-                onClick = onEconomyClick
-            )
-
-            // Statistics Dialog
-            MainDockButton(
-                title = "Stats",
-                icon = Icons.Default.InsertChart,
-                isSelected = false,
-                testTag = "bottom_btn_stats",
-                accentColor = Color(0xFF64B5F6),
-                onClick = onStatsClick
-            )
-
-            // Settings Dialog
-            MainDockButton(
-                title = "Settings",
-                icon = Icons.Default.Settings,
-                isSelected = false,
-                testTag = "bottom_btn_settings",
-                accentColor = Color(0xFFB0BEC5),
-                onClick = onSettingsClick
+            DockButton(
+                title = "MORE",
+                iconEmoji = "☰",
+                isSelected = activeCategory == "More",
+                testTag = "bottom_btn_more",
+                accentColor = PixelColors.AccentCyan,
+                onClick = { onCategoryClick("More") }
             )
         }
     }
 }
 
 @Composable
-fun MainDockButton(
+private fun DockButton(
     title: String,
-    icon: ImageVector,
+    iconEmoji: String,
     isSelected: Boolean,
     testTag: String,
     accentColor: Color,
     onClick: () -> Unit
 ) {
-    Surface(
+    PixelButton(
+        onClick = onClick,
+        isSelected = isSelected,
+        selectedColor = accentColor,
         modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .clickable { onClick() }
-            .testTag(testTag),
-        color = if (isSelected) accentColor.copy(alpha = 0.35f) else Color(0x22FFFFFF),
-        shape = RoundedCornerShape(14.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            if (isSelected) accentColor else Color(0x22FFFFFF)
-        )
+            .height(38.dp)
+            .testTag(testTag)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = if (isSelected) accentColor else Color.White,
-                modifier = Modifier.size(17.dp)
-            )
-            Spacer(modifier = Modifier.width(5.dp))
-            Text(
-                text = title,
-                color = if (isSelected) Color.White else Color(0xFFE0E0E0),
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                fontSize = 11.sp
-            )
-        }
+        Text(text = iconEmoji, fontSize = 13.sp)
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = title,
+            color = if (isSelected) Color.White else Color(0xFFCFD8DC),
+            fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+            fontSize = 10.5.sp,
+            letterSpacing = 0.5.sp
+        )
     }
 }

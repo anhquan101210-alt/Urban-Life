@@ -34,18 +34,16 @@ fun EconomyDialog(
     val netDaily = stats.dailyIncome - stats.dailyExpenses
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
+        PixelPanel(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
+                .widthIn(max = 440.dp)
+                .fillMaxWidth(0.92f)
                 .wrapContentHeight()
-                .padding(12.dp)
                 .testTag("economy_dialog"),
-            shape = RoundedCornerShape(24.dp),
-            color = Color(0xFF101C2E),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x33FFFFFF)),
-            shadowElevation = 16.dp
+            borderColor = PixelColors.AccentGreen,
+            backgroundColor = PixelColors.PanelBgSolid
         ) {
-            Column(modifier = Modifier.padding(18.dp)) {
+            Column(modifier = Modifier.padding(14.dp)) {
                 // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -53,60 +51,60 @@ fun EconomyDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "CITY TREASURY & TAXATION",
-                        color = Color(0xFF81C784),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
+                        text = "💰 TREASURY & TAXATION",
+                        color = PixelColors.AccentGreen,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 13.sp,
                         letterSpacing = 1.sp
                     )
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
                         Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.LightGray)
                     }
                 }
 
-                Divider(color = Color(0x22FFFFFF), modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(color = Color(0x33FFFFFF), modifier = Modifier.padding(vertical = 6.dp))
 
-                // Summary Cards
+                // Finance Summary Cards
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     FinanceSummaryCard(
                         title = "Daily Income",
                         amount = "+${currencyFormat.format(stats.dailyIncome)}",
-                        color = Color(0xFF81C784),
+                        color = PixelColors.AccentGreen,
                         modifier = Modifier.weight(1f)
                     )
                     FinanceSummaryCard(
-                        title = "Daily Expenses",
+                        title = "Daily Cost",
                         amount = "-${currencyFormat.format(stats.dailyExpenses)}",
-                        color = Color(0xFFEF5350),
+                        color = PixelColors.AccentRed,
                         modifier = Modifier.weight(1f)
                     )
                     FinanceSummaryCard(
-                        title = "Net Cashflow",
+                        title = "Net Flow",
                         amount = (if (netDaily >= 0) "+" else "") + currencyFormat.format(netDaily),
-                        color = if (netDaily >= 0) Color(0xFF4CAF50) else Color(0xFFFF1744),
+                        color = if (netDaily >= 0) PixelColors.AccentGreen else PixelColors.AccentRed,
                         modifier = Modifier.weight(1f)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "TAX POLICIES",
-                    color = Color(0xFF90CAF9),
+                    text = "TAX RATES",
+                    color = PixelColors.AccentCyan,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 10.5.sp
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // Tax Sliders
                 TaxSliderItem(
                     label = "Residential Tax",
                     value = resTax,
-                    color = Color(0xFF4CAF50),
+                    color = PixelColors.AccentGreen,
                     onValueChange = {
                         resTax = it
                         onTaxRatesChanged(resTax.roundToInt(), comTax.roundToInt(), indTax.roundToInt())
@@ -116,7 +114,7 @@ fun EconomyDialog(
                 TaxSliderItem(
                     label = "Commercial Tax",
                     value = comTax,
-                    color = Color(0xFF2196F3),
+                    color = PixelColors.AccentBlue,
                     onValueChange = {
                         comTax = it
                         onTaxRatesChanged(resTax.roundToInt(), comTax.roundToInt(), indTax.roundToInt())
@@ -126,7 +124,7 @@ fun EconomyDialog(
                 TaxSliderItem(
                     label = "Industrial Tax",
                     value = indTax,
-                    color = Color(0xFFFFC107),
+                    color = PixelColors.AccentOrange,
                     onValueChange = {
                         indTax = it
                         onTaxRatesChanged(resTax.roundToInt(), comTax.roundToInt(), indTax.roundToInt())
@@ -135,12 +133,13 @@ fun EconomyDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                Text(
-                    text = "High taxes increase immediate revenue but reduce building growth and citizen happiness.",
-                    color = Color.Gray,
-                    fontSize = 10.sp,
-                    lineHeight = 13.sp
-                )
+                PixelButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = Color(0xFF1E3A5F)
+                ) {
+                    Text("DONE", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                }
             }
         }
     }
@@ -153,16 +152,13 @@ private fun FinanceSummaryCard(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = Color(0x22FFFFFF)
+    Column(
+        modifier = modifier
+            .background(Color(0xFF0F1E30), RoundedCornerShape(4.dp))
+            .padding(6.dp)
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Text(text = title, color = Color.LightGray, fontSize = 10.sp)
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(text = amount, color = color, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-        }
+        Text(text = title, color = Color(0xFF90A4AE), fontSize = 9.sp)
+        Text(text = amount, color = color, fontWeight = FontWeight.Bold, fontSize = 11.sp)
     }
 }
 
@@ -173,17 +169,17 @@ private fun TaxSliderItem(
     color: Color,
     onValueChange: (Float) -> Unit
 ) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+    Column(modifier = Modifier.padding(vertical = 2.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = label, color = Color.White, fontSize = 11.sp)
+            Text(text = label, color = Color(0xFFECEFF1), fontSize = 10.sp)
             Text(
                 text = "${value.roundToInt()}%",
                 color = color,
                 fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
+                fontSize = 10.5.sp
             )
         }
         Slider(
@@ -194,7 +190,7 @@ private fun TaxSliderItem(
             colors = SliderDefaults.colors(
                 thumbColor = color,
                 activeTrackColor = color,
-                inactiveTrackColor = Color(0x33FFFFFF)
+                inactiveTrackColor = Color(0x22FFFFFF)
             )
         )
     }

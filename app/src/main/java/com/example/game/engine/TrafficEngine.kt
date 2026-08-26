@@ -12,28 +12,38 @@ class TrafficEngine(
     private val stats: CityStats
 ) {
     val vehicles = mutableListOf<Vehicle>()
+    val pedestrians = mutableListOf<Pedestrian>()
     private val random = Random(System.currentTimeMillis())
     private var spawnTimer = 0
+    private var pedSpawnTimer = 0
 
     fun update() {
         if (stats.simSpeed == 0) return
 
         val speedMult = stats.simSpeed.toFloat()
         spawnTimer++
+        pedSpawnTimer++
 
-        // Spawn vehicles based on city population & traffic demand
+        // 1. Spawn vehicles based on city population & traffic demand
         val maxVehicles = (stats.population / 15).coerceIn(4, 55)
         if (spawnTimer >= 15 && vehicles.size < maxVehicles) {
             spawnTimer = 0
             spawnRandomVehicle()
         }
 
-        // Move existing vehicles
-        val iterator = vehicles.iterator()
-        while (iterator.hasNext()) {
-            val v = iterator.next()
+        // 2. Spawn pedestrians near residential/commercial/parks
+        val maxPedestrians = (stats.population / 12).coerceIn(4, 45)
+        if (pedSpawnTimer >= 20 && pedestrians.size < maxPedestrians) {
+            pedSpawnTimer = 0
+            spawnRandomPedestrian()
+        }
+
+        // 3. Move existing vehicles
+        val vIter = vehicles.iterator()
+        while (vIter.hasNext()) {
+            val v = vIter.next()
             if (v.path.isEmpty() || v.pathIndex >= v.path.size) {
-                iterator.remove()
+                vIter.remove()
                 continue
             }
 
@@ -51,7 +61,7 @@ class TrafficEngine(
                 v.y = ty
                 v.pathIndex++
                 if (v.pathIndex >= v.path.size) {
-                    iterator.remove()
+                    vIter.remove()
                 }
             } else {
                 v.angle = atan2(dy, dx)
@@ -60,12 +70,44 @@ class TrafficEngine(
             }
         }
 
+        // 4. Move pedestrians
+        val pIter = pedestrians.iterator()
+        while (pIter.hasNext()) {
+            val p = pIter.next()
+            if (p.path.isEmpty() || p.pathIndex >= p.path.size) {
+                pIter.remove()
+                continue
+            }
+
+            val targetCoord = p.path[p.pathIndex]
+            val tx = targetCoord.first.toFloat() + 0.5f
+            val ty = targetCoord.second.toFloat() + 0.5f
+
+            val dx = tx - p.x
+            val dy = ty - p.y
+            val dist = hypot(dx, dy)
+
+            val moveStep = 0.022f * speedMult
+            if (dist <= moveStep * 1.5f) {
+                p.x = tx
+                p.y = ty
+                p.pathIndex++
+                p.walkAnimFrame++
+                if (p.pathIndex >= p.path.size) {
+                    pIter.remove()
+                }
+            } else {
+                p.x += (dx / dist) * moveStep
+                p.y += (dy / dist) * moveStep
+                p.walkAnimFrame++
+            }
+        }
+
         // Calculate Road Traffic Heatmap & Overall Traffic Index
         updateRoadCongestion()
     }
 
     fun dispatchEmergencyVehicle(targetX: Int, targetY: Int, type: VehicleType) {
-        // Find nearest fire/police/hospital station
         var nearestX = -1
         var nearestY = -1
         var minDist = Float.MAX_VALUE
@@ -132,7 +174,8 @@ class TrafficEngine(
             val vType = when (random.nextInt(10)) {
                 0, 1 -> VehicleType.BUS
                 2, 3 -> VehicleType.TRUCK
-                4 -> VehicleType.POLICE
+                4 -> VehicleType.TAXI
+                5 -> VehicleType.SUV
                 else -> VehicleType.CAR
             }
 
@@ -147,6 +190,40 @@ class TrafficEngine(
                 pathIndex = 1
             )
             vehicles.add(v)
+        }
+    }
+
+    private fun spawnRandomPedestrian() {
+        val walkableTiles = mutableListOf<Pair<Int, Int>>()
+        for (x in 0 until world.width) {
+            for (y in 0 until world.height) {
+                val tile = world.tiles[x][y]
+                if (tile.road != RoadType.NONE || tile.service?.category == ServiceCategory.PARK || tile.building != null) {
+                    walkableTiles.add(Pair(x, y))
+                }
+            }
+        }
+
+        if (walkableTiles.size < 3) return
+
+        val start = walkableTiles[random.nextInt(walkableTiles.size)]
+        val end = walkableTiles[random.nextInt(walkableTiles.size)]
+        if (start == end) return
+
+        val path = findRoadPath(start.first, start.second, end.first, end.second)
+        if (path.size >= 2) {
+            val ped = Pedestrian(
+                id = UUID.randomUUID().toString(),
+                x = path[0].first + 0.5f,
+                y = path[0].second + 0.5f,
+                targetX = end.first,
+                targetY = end.second,
+                colorIndex = random.nextInt(4),
+                path = path,
+                pathIndex = 1,
+                hasUmbrella = stats.weather == WeatherType.RAIN || stats.weather == WeatherType.STORM
+            )
+            pedestrians.add(ped)
         }
     }
 
@@ -189,7 +266,6 @@ class TrafficEngine(
 
         if (!found && !visited[endX][endY]) return emptyList()
 
-        // Reconstruct path
         val path = mutableListOf<Pair<Int, Int>>()
         var curr: Pair<Int, Int>? = target
         while (curr != null) {
@@ -204,7 +280,6 @@ class TrafficEngine(
         var totalRoadTiles = 0
         var totalCongestionScore = 0f
 
-        // Count vehicles per road tile
         val vehicleCounts = mutableMapOf<Pair<Int, Int>, Int>()
         for (v in vehicles) {
             val rx = v.x.toInt()
@@ -220,7 +295,6 @@ class TrafficEngine(
                     totalRoadTiles++
                     val vCount = vehicleCounts[Pair(x, y)] ?: 0
 
-                    // Surrounding building density pressure
                     var surroundingDensityScore = 0f
                     for (dx in -1..1) {
                         for (dy in -1..1) {
@@ -240,7 +314,6 @@ class TrafficEngine(
                         }
                     }
 
-                    // Public transport relief
                     val transitRelief = tile.publicTransportCoverage * 0.005f
 
                     val roadCapacity = when (tile.road) {

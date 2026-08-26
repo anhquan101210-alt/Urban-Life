@@ -40,7 +40,10 @@ class GreetingScreenshotTest {
                     camera = camera,
                     fps = 60,
                     showFps = true,
-                    onSpeedChanged = {}
+                    onSpeedChanged = {},
+                    onOpenDemand = {},
+                    onOpenCityInfo = {},
+                    onOpenSettings = {}
                 )
             }
         }

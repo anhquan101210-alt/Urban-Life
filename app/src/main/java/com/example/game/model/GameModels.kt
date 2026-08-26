@@ -1,11 +1,16 @@
 package com.example.game.model
 
-enum class TerrainType {
-    PLAINS,
-    HILL,
-    WATER,
-    SHORE,
-    FOREST
+enum class TerrainType(val displayName: String) {
+    GRASS("Grass"),
+    DARK_GRASS("Forest Grass"),
+    DIRT("Dirt"),
+    SAND("Sand"),
+    ROCK("Rock"),
+    WATER("Water"),
+    SHORE("Shore Beach"),
+    PLAINS("Plains"),
+    HILL("Hills"),
+    FOREST("Forest")
 }
 
 enum class ZoneType(
@@ -21,20 +26,20 @@ enum class ZoneType(
 ) {
     NONE("None", ZoneCategory.NONE, DensityLevel.NONE, 0, 0, 0, 0, 0, 0),
 
-    // Residential
-    RESIDENTIAL_LOW("Low Res", ZoneCategory.RESIDENTIAL, DensityLevel.LOW, 20, 5, 4, 3, 0, 8),
-    RESIDENTIAL_MED("Med Res", ZoneCategory.RESIDENTIAL, DensityLevel.MEDIUM, 60, 20, 18, 12, 1, 35),
-    RESIDENTIAL_HIGH("High Res", ZoneCategory.RESIDENTIAL, DensityLevel.HIGH, 150, 80, 75, 45, 3, 140),
+    // Residential (3 Densities)
+    RESIDENTIAL_LOW("Low Res (Houses)", ZoneCategory.RESIDENTIAL, DensityLevel.LOW, 20, 4, 3, 2, 0, 8),
+    RESIDENTIAL_MED("Med Res (Flats)", ZoneCategory.RESIDENTIAL, DensityLevel.MEDIUM, 60, 18, 15, 10, 1, 35),
+    RESIDENTIAL_HIGH("High Res (Towers)", ZoneCategory.RESIDENTIAL, DensityLevel.HIGH, 150, 75, 70, 40, 3, 140),
 
-    // Commercial
-    COMMERCIAL_LOW("Low Com", ZoneCategory.COMMERCIAL, DensityLevel.LOW, 30, 8, 6, 5, 1, 15),
-    COMMERCIAL_MED("Med Com", ZoneCategory.COMMERCIAL, DensityLevel.MEDIUM, 90, 30, 25, 18, 2, 60),
-    COMMERCIAL_HIGH("High Com", ZoneCategory.COMMERCIAL, DensityLevel.HIGH, 220, 100, 90, 60, 4, 220),
+    // Commercial (3 Densities)
+    COMMERCIAL_LOW("Low Com (Cafes)", ZoneCategory.COMMERCIAL, DensityLevel.LOW, 30, 7, 5, 4, 1, 15),
+    COMMERCIAL_MED("Med Com (Plazas)", ZoneCategory.COMMERCIAL, DensityLevel.MEDIUM, 90, 28, 22, 16, 2, 60),
+    COMMERCIAL_HIGH("High Com (Skyscrapers)", ZoneCategory.COMMERCIAL, DensityLevel.HIGH, 220, 95, 85, 55, 4, 220),
 
-    // Industrial
-    INDUSTRIAL_LOW("Low Ind", ZoneCategory.INDUSTRIAL, DensityLevel.LOW, 25, 12, 10, 10, 15, 18),
-    INDUSTRIAL_MED("Med Ind", ZoneCategory.INDUSTRIAL, DensityLevel.MEDIUM, 75, 45, 35, 35, 45, 70),
-    INDUSTRIAL_HIGH("High Ind", ZoneCategory.INDUSTRIAL, DensityLevel.HIGH, 180, 140, 110, 90, 110, 260)
+    // Industrial (3 Densities)
+    INDUSTRIAL_LOW("Low Ind (Workshops)", ZoneCategory.INDUSTRIAL, DensityLevel.LOW, 25, 10, 8, 8, 12, 18),
+    INDUSTRIAL_MED("Med Ind (Factories)", ZoneCategory.INDUSTRIAL, DensityLevel.MEDIUM, 75, 40, 30, 30, 40, 70),
+    INDUSTRIAL_HIGH("High Ind (Refineries)", ZoneCategory.INDUSTRIAL, DensityLevel.HIGH, 180, 130, 100, 85, 105, 260)
 }
 
 enum class ZoneCategory {
@@ -61,10 +66,10 @@ enum class RoadType(
 ) {
     NONE("None", 0, 0, 0, 0f, 0),
     SMALL_2L("Small Road (2L)", 2, 25, 1, 1.0f, 100),
-    MEDIUM_4L("Medium Road (4L)", 4, 60, 2, 1.4f, 250),
+    MEDIUM_4L("Avenue (4L)", 4, 60, 2, 1.4f, 250),
     LARGE_6L("Boulevard (6L)", 6, 120, 4, 1.8f, 500),
     HIGHWAY("Highway", 4, 220, 7, 2.5f, 1000),
-    BRIDGE("Bridge", 2, 90, 3, 1.2f, 200)
+    BRIDGE("Bridge (Water)", 2, 90, 3, 1.2f, 200)
 }
 
 enum class ServiceType(
@@ -79,10 +84,10 @@ enum class ServiceType(
 ) {
     POLICE_STATION("Police Station", ServiceCategory.POLICE, 600, 20, 8, 40, 15, 10),
     FIRE_STATION("Fire Station", ServiceCategory.FIRE, 600, 20, 8, 50, 15, 15),
-    HOSPITAL("Clinic / Hospital", ServiceCategory.HEALTH, 900, 35, 10, 45, 25, 25),
+    HOSPITAL("Hospital / Clinic", ServiceCategory.HEALTH, 900, 35, 10, 45, 25, 25),
     ELEMENTARY_SCHOOL("Elementary School", ServiceCategory.EDUCATION, 500, 15, 6, 30, 10, 10),
     HIGH_SCHOOL("High School", ServiceCategory.EDUCATION, 1100, 40, 9, 45, 20, 20),
-    UNIVERSITY("University", ServiceCategory.EDUCATION, 2800, 90, 15, 70, 50, 40),
+    UNIVERSITY("University Campus", ServiceCategory.EDUCATION, 2800, 90, 15, 70, 50, 40),
     PARK_SMALL("Small Park", ServiceCategory.PARK, 150, 5, 4, 25, 2, 5),
     PARK_LARGE("Central Park", ServiceCategory.PARK, 650, 18, 9, 60, 5, 15),
     CEMETERY("Cemetery", ServiceCategory.DEATH_CARE, 400, 12, 7, 20, 5, 5),
@@ -111,10 +116,10 @@ enum class UtilityType(
 ) {
     WIND_TURBINE("Wind Turbine", UtilityCategory.POWER, 450, 10, 45, 0, 0, false),
     SOLAR_PLANT("Solar Farm", UtilityCategory.POWER, 950, 18, 110, 0, 0, false),
-    GAS_PLANT("Gas Plant", UtilityCategory.POWER, 2000, 45, 280, 0, 25, false),
-    COAL_PLANT("Coal Plant", UtilityCategory.POWER, 3500, 75, 550, 0, 85, false),
+    GAS_PLANT("Gas Power Plant", UtilityCategory.POWER, 2000, 45, 280, 0, 25, false),
+    COAL_PLANT("Coal Power Plant", UtilityCategory.POWER, 3500, 75, 550, 0, 85, false),
 
-    WATER_PUMP("Water Pump", UtilityCategory.WATER, 600, 15, 0, 180, 0, true),
+    WATER_PUMP("Water Pump (River/Lake)", UtilityCategory.WATER, 600, 15, 0, 180, 0, true),
     WATER_TOWER("Water Tower", UtilityCategory.WATER, 350, 8, 0, 80, 0, false),
     SEWAGE_PLANT("Sewage Treatment", UtilityCategory.WATER, 800, 25, 0, 220, 20, false)
 }
@@ -165,7 +170,7 @@ data class Building(
     var isWatered: Boolean = true,
     var hasRoadAccess: Boolean = true,
     var colorSeed: Int = 0,
-    var styleVariant: Int = 0,
+    var styleVariant: Int = 0, // 0..4 for rich visual variations
     var buildingName: String = ""
 )
 
@@ -173,14 +178,14 @@ data class GridTile(
     val x: Int,
     val y: Int,
     var elevation: Float = 0f,
-    var terrain: TerrainType = TerrainType.PLAINS,
+    var terrain: TerrainType = TerrainType.GRASS,
     var zone: ZoneType = ZoneType.NONE,
     var road: RoadType = RoadType.NONE,
     var service: ServiceType? = null,
     var utility: UtilityType? = null,
     var transport: TransportType? = null,
     var building: Building? = null,
-    var treeType: Int = 0, // 0 = none, 1..3 = tree types
+    var treeType: Int = 0, // 0 = none, 1..6 = tree & nature types
 
     // Simulation fields
     var landValue: Int = 40,
@@ -206,11 +211,13 @@ enum class VehicleType(
     val isEmergency: Boolean = false
 ) {
     CAR(0.045f, 0xFF4A90E2),
-    BUS(0.032f, 0xFFF5A623),
-    TRUCK(0.028f, 0xFF7ED321),
-    POLICE(0.060f, 0xFF1B3B6F, true),
-    FIRE_TRUCK(0.055f, 0xFFD0021B, true),
-    AMBULANCE(0.058f, 0xFFE0E0E0, true)
+    TAXI(0.046f, 0xFFFFD600),
+    SUV(0.042f, 0xFF43A047),
+    BUS(0.032f, 0xFFFB8C00),
+    TRUCK(0.028f, 0xFF8D6E63),
+    POLICE(0.062f, 0xFF1E88E5, true),
+    FIRE_TRUCK(0.056f, 0xFFE53935, true),
+    AMBULANCE(0.060f, 0xFFFFFFFF, true)
 }
 
 data class Vehicle(
@@ -226,8 +233,28 @@ data class Vehicle(
     var isEmergencyMission: Boolean = false
 )
 
+data class Pedestrian(
+    val id: String,
+    var x: Float,
+    var y: Float,
+    var targetX: Int,
+    var targetY: Int,
+    var walkAnimFrame: Int = 0,
+    var colorIndex: Int = 0,
+    var path: List<Pair<Int, Int>> = emptyList(),
+    var pathIndex: Int = 0,
+    var hasUmbrella: Boolean = false
+)
+
+enum class WeatherType(val displayName: String, val icon: String) {
+    SUNNY("Sunny", "☀"),
+    CLOUDY("Cloudy", "☁"),
+    RAIN("Rain", "🌧"),
+    STORM("Thunderstorm", "⛈")
+}
+
 enum class OverlayMode(val label: String) {
-    NORMAL("Normal 3D"),
+    NORMAL("Normal 2D"),
     ZONES("Zoning"),
     TRAFFIC("Traffic Flow"),
     POLLUTION("Pollution"),
@@ -278,7 +305,8 @@ data class CityStats(
     var airPollutionIndex: Int = 5,
     var dayTime: Float = 9.0f, // 0.0 to 24.0 hours
     var dayCount: Int = 1,
-    var simSpeed: Int = 1 // 0 = Pause, 1 = 1x, 2 = 2x, 4 = 4x
+    var simSpeed: Int = 1, // 0 = Pause, 1 = 1x, 2 = 2x, 4 = 4x
+    var weather: WeatherType = WeatherType.SUNNY
 )
 
 data class HistoryPoint(
@@ -311,5 +339,5 @@ data class ActiveTool(
 enum class GraphicsQuality(val label: String) {
     LOW("Low (Best FPS)"),
     MEDIUM("Medium (Balanced)"),
-    HIGH("High (Full 3D)")
+    HIGH("High (Full Pixel Details)")
 }

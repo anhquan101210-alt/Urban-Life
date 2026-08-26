@@ -1,6 +1,8 @@
 package com.example.game.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -9,8 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -20,225 +22,192 @@ import com.example.game.model.*
 @Composable
 fun InspectorSheet(
     tile: GridTile,
+    onUpgrade: (GridTile) -> Unit,
     onDemolish: (GridTile) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val b = tile.building
 
-    Surface(
+    PixelPanel(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .widthIn(max = 440.dp)
+            .fillMaxWidth(0.92f)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
             .testTag("inspector_sheet"),
-        shape = RoundedCornerShape(20.dp),
-        color = Color(0xF0101E30),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x33FFFFFF)),
-        shadowElevation = 12.dp
+        borderColor = PixelColors.AccentCyan,
+        backgroundColor = PixelColors.PanelBgSolid
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            // Header
+        Column(modifier = Modifier.padding(10.dp)) {
+            // Header: Title & Close
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    val title = when {
-                        b != null -> b.buildingName
-                        tile.service != null -> tile.service!!.displayName
-                        tile.utility != null -> tile.utility!!.displayName
-                        tile.transport != null -> tile.transport!!.displayName
-                        tile.road != RoadType.NONE -> tile.road.displayName
-                        tile.zone != ZoneType.NONE -> "${tile.zone.displayName} Lot"
-                        else -> "${tile.terrain.name.lowercase().capitalize()} Tile"
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val iconEmoji = when {
+                        b != null -> when (b.zoneType.category) {
+                            ZoneCategory.RESIDENTIAL -> "🏠"
+                            ZoneCategory.COMMERCIAL -> "🏬"
+                            ZoneCategory.INDUSTRIAL -> "🏭"
+                            else -> "🏢"
+                        }
+                        tile.service != null -> "🛡"
+                        tile.utility != null -> "⚡"
+                        tile.transport != null -> "🚌"
+                        tile.road != RoadType.NONE -> "🛣"
+                        tile.zone != ZoneType.NONE -> "📐"
+                        else -> "🌱"
                     }
-                    Text(
-                        text = title,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
-                    )
-                    Text(
-                        text = "Location: (${tile.x}, ${tile.y})  •  Elevation: ${tile.elevation}",
-                        color = Color.Gray,
-                        fontSize = 10.sp
-                    )
+                    Text(iconEmoji, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        val title = when {
+                            b != null -> b.buildingName
+                            tile.service != null -> tile.service!!.displayName
+                            tile.utility != null -> tile.utility!!.displayName
+                            tile.transport != null -> tile.transport!!.displayName
+                            tile.road != RoadType.NONE -> tile.road.displayName
+                            tile.zone != ZoneType.NONE -> "${tile.zone.displayName} Zone Lot"
+                            else -> "${tile.terrain.name.lowercase().replaceFirstChar { it.uppercase() }} Tile"
+                        }
+                        Text(
+                            text = title,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.5.sp
+                        )
+                        Text(
+                            text = "Grid (${tile.x}, ${tile.y}) • Land Value: $${tile.landValue}",
+                            color = Color(0xFF90A4AE),
+                            fontSize = 9.sp
+                        )
+                    }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Demolish button
-                    IconButton(
-                        onClick = { onDemolish(tile) },
-                        modifier = Modifier.testTag("inspector_demolish_btn")
-                    ) {
-                        Icon(Icons.Default.DeleteForever, contentDescription = "Demolish", tint = Color(0xFFFF5252))
-                    }
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.LightGray)
-                    }
+                IconButton(onClick = onDismiss, modifier = Modifier.size(22.dp)) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.LightGray, modifier = Modifier.size(16.dp))
                 }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Building Details if present
+            // Building Details
             if (b != null) {
-                // Zone & Density Badge
-                val densityColor = when (b.zoneType.density) {
-                    DensityLevel.LOW -> Color(0xFF81C784)
-                    DensityLevel.MEDIUM -> Color(0xFF4CAF50)
-                    DensityLevel.HIGH -> Color(0xFF2E7D32)
-                    DensityLevel.NONE -> Color.Gray
-                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    StatusBadge(
-                        text = "${b.zoneType.category.name} (${b.zoneType.density.name} DENSITY)",
-                        color = densityColor
+                    PixelBadge("Level ${b.level}/3", PixelColors.AccentCyan)
+                    PixelBadge(
+                        if (b.zoneType.category == ZoneCategory.RESIDENTIAL) "Pop: ${b.population}" else "Jobs: ${b.jobs}",
+                        PixelColors.AccentGreen
                     )
-                    StatusBadge(
-                        text = "Level ${b.level}/3",
-                        color = Color(0xFF90CAF9)
-                    )
-                    StatusBadge(
-                        text = b.stage.name,
-                        color = if (b.stage == BuildingStage.BUILT) Color(0xFF81C784) else Color(0xFFFFB74D)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Stats Grid
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    if (b.zoneType.category == ZoneCategory.RESIDENTIAL) {
-                        InspectorMetricCard("Residents", "${b.population}", Icons.Default.People, Color(0xFF64B5F6), Modifier.weight(1f))
-                    } else {
-                        InspectorMetricCard("Jobs", "${b.jobs}", Icons.Default.Work, Color(0xFFFFB74D), Modifier.weight(1f))
-                    }
-                    InspectorMetricCard("Happiness", "${b.happinessScore}%", Icons.Default.SentimentSatisfied, Color(0xFF81C784), Modifier.weight(1f))
-                    InspectorMetricCard("Land Value", "${tile.landValue}", Icons.Default.MonetizationOn, Color(0xFFFFD54F), Modifier.weight(1f))
+                    PixelBadge("Joy: ${b.happinessScore}%", PixelColors.AccentGold)
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Utility Status Checks
+                // Service Status Checks (Power, Water, Fire Safety, Road Access)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    UtilityStatusChip("Power", b.isPowered, Icons.Default.Bolt, Modifier.weight(1f))
-                    UtilityStatusChip("Water", b.isWatered, Icons.Default.WaterDrop, Modifier.weight(1f))
-                    UtilityStatusChip("Road", b.hasRoadAccess, Icons.Default.AddRoad, Modifier.weight(1f))
+                    StatusCheckPill("⚡ Power", b.isPowered, Modifier.weight(1f))
+                    StatusCheckPill("💧 Water", b.isWatered, Modifier.weight(1f))
+                    StatusCheckPill("🛣 Road", b.hasRoadAccess, Modifier.weight(1f))
                 }
             } else if (tile.road != RoadType.NONE) {
                 Text(
-                    text = "Lanes: ${tile.road.lanes}  •  Speed Limit: ${tile.road.speedLimit}x  •  Capacity: ${tile.road.capacity}",
-                    color = Color.LightGray,
-                    fontSize = 11.sp
+                    text = "Capacity: ${tile.road.capacity} cars/h • Speed: ${tile.road.speedLimit}x",
+                    color = Color(0xFFCFD8DC),
+                    fontSize = 10.sp
                 )
                 Text(
-                    text = "Traffic Congestion: ${(tile.trafficVolume * 100).toInt()}%",
-                    color = if (tile.trafficVolume > 0.6f) Color(0xFFFF5252) else Color(0xFF81C784),
-                    fontSize = 11.sp,
+                    text = "Traffic: ${(tile.trafficVolume * 100).toInt()}% ${if (tile.trafficVolume > 0.6f) "(Congested)" else "(Smooth)"}",
+                    color = if (tile.trafficVolume > 0.6f) PixelColors.AccentRed else PixelColors.AccentGreen,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
             } else if (tile.service != null) {
                 val s = tile.service!!
                 Text(
-                    text = "Service: ${s.displayName}  •  Coverage Radius: ${s.radius} tiles  •  Maintenance: $${s.maintenance}/day",
-                    color = Color.LightGray,
-                    fontSize = 11.sp
+                    text = "Radius: ${s.radius} tiles • Maintenance: $${s.maintenance}/day",
+                    color = Color(0xFFCFD8DC),
+                    fontSize = 10.sp
                 )
             } else if (tile.utility != null) {
                 val u = tile.utility!!
-                val output = if (u.category == UtilityCategory.POWER) "${u.outputPowerMW} MW Electricity" else "${u.outputWaterMG} MG Water"
+                val output = if (u.category == UtilityCategory.POWER) "${u.outputPowerMW} MW Electric" else "${u.outputWaterMG} MG Water"
                 Text(
-                    text = "Utility: ${u.displayName}  •  Output: $output  •  Maintenance: $${u.maintenance}/day",
-                    color = Color.LightGray,
-                    fontSize = 11.sp
+                    text = "Output: $output • Maintenance: $${u.maintenance}/day",
+                    color = Color(0xFFCFD8DC),
+                    fontSize = 10.sp
                 )
             }
-        }
-    }
-}
 
-@Composable
-private fun StatusBadge(text: String, color: Color) {
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = color.copy(alpha = 0.25f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color)
-    ) {
-        Text(
-            text = text,
-            color = color,
-            fontWeight = FontWeight.Bold,
-            fontSize = 9.sp,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-        )
-    }
-}
+            Spacer(modifier = Modifier.height(8.dp))
 
-@Composable
-private fun InspectorMetricCard(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(10.dp),
-        color = Color(0x22FFFFFF)
-    ) {
-        Row(
-            modifier = Modifier.padding(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Column {
-                Text(text = label, color = Color.Gray, fontSize = 8.sp)
-                Text(text = value, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            // Action Buttons: Upgrade (if building), Demolish, Close
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (b != null && b.level < 3) {
+                    val upgradeCost = b.level * 150L
+                    PixelButton(
+                        onClick = { onUpgrade(tile) },
+                        modifier = Modifier.weight(1f),
+                        backgroundColor = Color(0xFF1B5E20),
+                        borderColor = PixelColors.AccentGreen
+                    ) {
+                        Text("⬆ UPGRADE ($$upgradeCost)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                    }
+                }
+
+                PixelButton(
+                    onClick = { onDemolish(tile) },
+                    modifier = Modifier.weight(1f),
+                    backgroundColor = Color(0xFF7F0000),
+                    borderColor = PixelColors.AccentRed
+                ) {
+                    Text("🚜 DEMOLISH ($10)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                }
+
+                PixelButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(0.7f),
+                    backgroundColor = Color(0xFF1E3A5F)
+                ) {
+                    Text("CLOSE", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun UtilityStatusChip(
+private fun StatusCheckPill(
     label: String,
     isActive: Boolean,
-    icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
-    val color = if (isActive) Color(0xFF81C784) else Color(0xFFFF5252)
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        color = color.copy(alpha = 0.2f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.6f))
+    val color = if (isActive) PixelColors.AccentGreen else PixelColors.AccentRed
+    val icon = if (isActive) "✓" else "✕"
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(color.copy(alpha = 0.18f))
+            .border(BorderStroke(1.dp, color.copy(alpha = 0.5f)), RoundedCornerShape(4.dp))
+            .padding(horizontal = 4.dp, vertical = 3.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(14.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = if (isActive) "$label: OK" else "$label: NO",
-                color = color,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        Text(
+            text = "$label $icon",
+            color = color,
+            fontWeight = FontWeight.Bold,
+            fontSize = 9.5.sp
+        )
     }
 }

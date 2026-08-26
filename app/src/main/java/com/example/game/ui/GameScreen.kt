@@ -1,17 +1,19 @@
 package com.example.game.ui
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,11 +28,21 @@ fun GameScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val renderer = remember { Game3DRenderer(viewModel.camera) }
+    val context = LocalContext.current
 
     var activeCategory by remember { mutableStateOf<String?>(null) }
     var hoverTile by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Android Back button handler
+    BackHandler {
+        if (activeCategory != null) {
+            activeCategory = null
+        } else {
+            viewModel.handleBackPress()
+        }
+    }
 
     LaunchedEffect(uiState.toastMessage) {
         uiState.toastMessage?.let { msg ->
@@ -44,7 +56,7 @@ fun GameScreen(
             .fillMaxSize()
             .testTag("game_screen_container")
     ) {
-        // 1. 3D Game Canvas with Multi-Touch Controls
+        // 1. Isometric City Canvas with Pan, Pinch-Zoom, and Tap-Selection
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,12 +65,9 @@ fun GameScreen(
                     viewModel.camera.viewportHeight = size.height.toFloat()
                 }
                 .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, rotation ->
+                    detectTransformGestures { _, pan, zoom, _ ->
                         if (zoom != 1.0f) {
                             viewModel.camera.zoomBy(zoom)
-                        }
-                        if (rotation != 0f) {
-                            viewModel.camera.rotateBy(rotation * 0.8f, 0f)
                         }
                         if (pan != Offset.Zero) {
                             viewModel.camera.pan(pan.x, pan.y)
@@ -96,10 +105,24 @@ fun GameScreen(
             fps = uiState.fps,
             showFps = uiState.showFpsCounter,
             onSpeedChanged = { viewModel.setSimSpeed(it) },
+            onOpenDemand = { viewModel.toggleDemandDialog(true) },
+            onOpenCityInfo = { viewModel.toggleCityOverviewDialog(true) },
+            onOpenSettings = { viewModel.toggleSettingsDialog(true) },
             modifier = Modifier.align(Alignment.TopCenter)
         )
 
-        // 3. Active Disaster Alert Banner
+        // 3. Active Tool Floating Banner (When a build/zone/demolish tool is selected)
+        if (uiState.activeTool.mode != ToolMode.INSPECT) {
+            ActiveToolBanner(
+                activeTool = uiState.activeTool,
+                onCancel = { viewModel.selectTool(ActiveTool(mode = ToolMode.INSPECT)) },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 44.dp)
+            )
+        }
+
+        // 4. Disaster Emergency Alert Banner
         uiState.activeDisaster?.let { disaster ->
             DisasterAlert(
                 disaster = disaster,
@@ -107,31 +130,42 @@ fun GameScreen(
                 onDismiss = { viewModel.dismissDisaster() },
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 64.dp)
+                    .padding(top = if (uiState.activeTool.mode != ToolMode.INSPECT) 80.dp else 46.dp)
             )
         }
 
-        // 4. Bottom Controls (Flyouts, Inspector, Bottom Bar)
+        // 5. Functional Minimap Widget (Bottom-Right, above navigation dock)
+        MinimapWidget(
+            world = viewModel.world,
+            camera = viewModel.camera,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 8.dp, bottom = 48.dp)
+        )
+
+        // 6. Bottom Controls: Inspector Sheet, Flyout Menu, and Dock
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Inspector Sheet if a tile is selected
+            // Inspector Sheet for Selected Tile / Building
             uiState.selectedTile?.let { tile ->
                 InspectorSheet(
                     tile = tile,
+                    onUpgrade = { viewModel.upgradeTile(it) },
                     onDemolish = { viewModel.demolishTile(it) },
                     onDismiss = { viewModel.dismissInspector() }
                 )
             }
 
-            // Flyout Submenu for currently selected category
+            // Flyout Submenu for active Category
             ToolFlyoutMenu(
                 activeCategory = activeCategory,
                 activeTool = uiState.activeTool,
                 activeOverlay = uiState.overlayMode,
+                stats = viewModel.sim.stats,
                 onSelectTool = { tool ->
                     viewModel.selectTool(tool)
                     activeCategory = null
@@ -140,27 +174,36 @@ fun GameScreen(
                     viewModel.setOverlay(overlay)
                     activeCategory = null
                 },
+                onOpenCityOverview = {
+                    viewModel.toggleCityOverviewDialog(true)
+                    activeCategory = null
+                },
+                onOpenEconomy = {
+                    viewModel.toggleEconomyDialog(true)
+                    activeCategory = null
+                },
+                onOpenStats = {
+                    viewModel.toggleStatsDialog(true)
+                    activeCategory = null
+                },
+                onOpenSettings = {
+                    viewModel.toggleSettingsDialog(true)
+                    activeCategory = null
+                },
                 onClose = { activeCategory = null }
             )
 
-            // Primary Bottom Bar
+            // Primary Bottom Dock (Zones, Roads, Services, Utilities, Transport, More)
             GameBottomBar(
                 activeCategory = activeCategory,
                 activeTool = uiState.activeTool,
                 onCategoryClick = { cat ->
                     activeCategory = if (activeCategory == cat) null else cat
-                },
-                onEconomyClick = { viewModel.toggleEconomyDialog(true) },
-                onStatsClick = { viewModel.toggleStatsDialog(true) },
-                onSettingsClick = { viewModel.toggleSettingsDialog(true) },
-                onDemolishClick = {
-                    viewModel.selectTool(ActiveTool(mode = ToolMode.DEMOLISH))
-                    activeCategory = null
                 }
             )
         }
 
-        // 5. Snackbar for quick toasts
+        // 7. In-game Feedback SnackBar
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
@@ -168,7 +211,21 @@ fun GameScreen(
                 .padding(16.dp)
         )
 
-        // 6. Dialogs
+        // 8. Dialog Modals
+        if (uiState.isDemandDialogOpen) {
+            CityDemandDialog(
+                stats = viewModel.sim.stats,
+                onDismiss = { viewModel.toggleDemandDialog(false) }
+            )
+        }
+
+        if (uiState.isCityOverviewDialogOpen) {
+            CityOverviewDialog(
+                stats = viewModel.sim.stats,
+                onDismiss = { viewModel.toggleCityOverviewDialog(false) }
+            )
+        }
+
         if (uiState.isEconomyDialogOpen) {
             EconomyDialog(
                 stats = viewModel.sim.stats,
@@ -196,6 +253,15 @@ fun GameScreen(
                 onLoadCity = { viewModel.loadCity("City 1") },
                 onResetCity = { viewModel.resetCity() },
                 onDismiss = { viewModel.toggleSettingsDialog(false) }
+            )
+        }
+
+        if (uiState.isExitConfirmDialogOpen) {
+            ExitConfirmDialog(
+                onConfirmExit = {
+                    (context as? Activity)?.finish()
+                },
+                onDismiss = { viewModel.toggleExitConfirmDialog(false) }
             )
         }
     }
